@@ -16,12 +16,19 @@ showtext::showtext_auto(TRUE)
 # - 2026/04/06 ver 0.7 個体グラフ描画をplotlyを使うものに変更（変数マップでは文字が消える）
 # - 2026/02/24 ver 0.6 initial release
 
+# DESCRIPTIONファイルから情報を読み取る
+desc_info <- read.dcf("DESCRIPTION")
+app_version <- desc_info[1, "Version"]
+
 # ui
 ui <- fluidPage(
   #  shinyWidgets::useShinyWidgets(),
   titlePanel("speMCA 分析アプリ"),
   sidebarLayout(
     sidebarPanel(
+      # バージョン情報の表示
+      helpText(paste("Version:", app_version)),
+#      hr(), # 区切り線
       fileInput("file", "rdaファイルをアップロードしてください", accept = ".rda"),
       actionButton("load_rda", "rdaファイルを読み込む", class = "btn-primary"),
       hr(),
