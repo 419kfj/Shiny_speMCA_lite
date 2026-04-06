@@ -4,13 +4,19 @@ library(shiny)
 library(GDAtools)
 library(tidyverse)
 library(DT)
+library(plotly)
 library(showtext)
 # 追加ライブラリ
 library(shinyWidgets)
 
-
 showtext::showtext_auto(TRUE)
 
+## 履歴
+
+# - 2026/04/06 ver 0.7 個体グラフ描画をplotlyを使うものに変更（変数マップでは文字が消える）
+# - 2026/02/24 ver 0.6 initial release
+
+# ui
 ui <- fluidPage(
   #  shinyWidgets::useShinyWidgets(),
   titlePanel("speMCA 分析アプリ"),
@@ -40,12 +46,12 @@ ui <- fluidPage(
                  plotOutput("var_map_32", height = "600px"),
                  plotOutput("var_map_13", height = "600px")),
         tabPanel("個体マップ",
-                 plotOutput("ind_map_12", height = "600px"),
-                 plotOutput("ind_map_32", height = "600px"),
-                 plotOutput("ind_map_13", height = "600px")),
+                 plotlyOutput("ind_map_12", height = "600px"),
+                 plotlyOutput("ind_map_32", height = "600px"),
+                 plotlyOutput("ind_map_13", height = "600px")),
         tabPanel("データ表示", DTOutput("data_table")),
         tabPanel("supvarsの情報", verbatimTextOutput("supvars_out")),
-        tabPanel("変数マップ＋supvars", plotOutput("supvars_map")),
+        tabPanel("変数マップ＋supvars", plotlyOutput("supvars_map")),
         tabPanel("交互作用plot", plotOutput("interaction_map")),
         tabPanel("集中楕円", plotOutput("kellipses_map"))
       )
@@ -191,21 +197,6 @@ server <- function(input, output, session) {
     })
   })
 
-  # ------------------------
-  #  kelleses 用カテゴリチェックボックス（var_ellipses を選んだら生成）
-  # ------------------------
-  # output$kellipses_cat_selector <- renderUI({　#　最初のズラーットチェックボックスが並ぶやつ。
-  #   req(df_reactive())
-  #   req(input$var_ellipses)
-  #   df <- df_reactive()
-  #   var <- df[[input$var_ellipses]]
-  #   lv <- levels(as.factor(var))
-  #   checkboxGroupInput("selected_categories",
-  #                      "表示するカテゴリを選んでください",
-  #                      choices = lv,
-  #                      selected = lv)
-  # })
-
   output$kellipses_cat_selector <- renderUI({
     req(df_reactive())
     req(input$var_ellipses)
@@ -296,9 +287,16 @@ server <- function(input, output, session) {
   # ------------------------
   #  変数マップ（3枚）
   # ------------------------
-  output$var_map_12 <- renderPlot({
+  output$var_map_12 <- renderPlot({ # plotly に渡すと、文字が消えてしますので、中断
     res <- mca_result(); req(res)
-    GDAtools::ggcloud_variables(res) + theme(aspect.ratio = 1) + ggtitle("変数マップ 1-2軸")
+    p <- GDAtools::ggcloud_variables(res) + theme(aspect.ratio = 1) + ggtitle("変数マップ 1-2軸")
+    p
+    # ggplotly(p, tooltip = "text") %>%
+    #   layout(
+    #     # y軸とx軸の比率を 1:1 に固定
+    #     yaxis = list(scaleanchor = "x", scaleratio = 1),
+    #     hoverlabel = list(bgcolor = "white", font = list(color = "black"))
+    #   )
   })
   output$var_map_32 <- renderPlot({
     res <- mca_result(); req(res)
@@ -312,17 +310,35 @@ server <- function(input, output, session) {
   # ------------------------
   #  個体マップ（3枚）
   # ------------------------
-  output$ind_map_12 <- renderPlot({
+  output$ind_map_12 <- renderPlotly({
     res <- mca_result(); req(res)
-    GDAtools::ggcloud_indiv(res) + theme(aspect.ratio = 1) + ggtitle("個体マップ 1-2軸")
+    p <- GDAtools::ggcloud_indiv(res) + theme(aspect.ratio = 1) + ggtitle("個体マップ 1-2軸")
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        # y軸とx軸の比率を 1:1 に固定
+        yaxis = list(scaleanchor = "x", scaleratio = 1),
+        hoverlabel = list(bgcolor = "white", font = list(color = "black"))
+      )
   })
-  output$ind_map_32 <- renderPlot({
+  output$ind_map_32 <- renderPlotly({
     res <- mca_result(); req(res)
-    GDAtools::ggcloud_indiv(res, axes = c(3,2)) + theme(aspect.ratio = 1) + ggtitle("個体マップ 3-2軸")
+    p <- GDAtools::ggcloud_indiv(res, axes = c(3,2)) + theme(aspect.ratio = 1) + ggtitle("個体マップ 3-2軸")
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        # y軸とx軸の比率を 1:1 に固定
+        yaxis = list(scaleanchor = "x", scaleratio = 1),
+        hoverlabel = list(bgcolor = "white", font = list(color = "black"))
+      )
   })
-  output$ind_map_13 <- renderPlot({
+  output$ind_map_13 <- renderPlotly({
     res <- mca_result(); req(res)
-    GDAtools::ggcloud_indiv(res, axes = c(1,3)) + theme(aspect.ratio = 1) + ggtitle("個体マップ 1-3軸")
+    p <- GDAtools::ggcloud_indiv(res, axes = c(1,3)) + theme(aspect.ratio = 1) + ggtitle("個体マップ 1-3軸")
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        # y軸とx軸の比率を 1:1 に固定
+        yaxis = list(scaleanchor = "x", scaleratio = 1),
+        hoverlabel = list(bgcolor = "white", font = list(color = "black"))
+      )
   })
 
   # ------------------------
@@ -333,14 +349,21 @@ server <- function(input, output, session) {
     if (is.null(res)) "supvarsの結果がありません" else print(res)
   })
 
-  output$supvars_map <- renderPlot({
+  output$supvars_map <- renderPlotly({
     req(mca_result(), input$supvars)
     res <- mca_result()
     df <- df_reactive()
     tryCatch({
       base_map <- GDAtools::ggcloud_variables(res, col = "lightgrey")
-      GDAtools::ggadd_supvars(p = base_map, resmca = res, vars = df %>% select(all_of(input$supvars))) +
+      p <- GDAtools::ggadd_supvars(p = base_map, resmca = res, vars = df %>% select(all_of(input$supvars))) +
         theme(aspect.ratio = 1)
+      p
+      # ggplotly(p, tooltip = "all") %>%
+      #   layout(
+      #     # y軸とx軸の比率を 1:1 に固定
+      #     yaxis = list(scaleanchor = "x", scaleratio = 1),
+      #     hoverlabel = list(bgcolor = "white", font = list(color = "black"))
+      #   )
     }, error = function(e) {
       message("ggadd_supvars エラー: ", e$message)
       NULL
@@ -404,6 +427,7 @@ server <- function(input, output, session) {
         showNotification("MCA結果がありません。", type = "error")
         return(NULL)
       }
+      browser()
       saveRDS(res, file)
     }
   )
