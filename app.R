@@ -13,6 +13,7 @@ showtext::showtext_auto(TRUE)
 
 ## 履歴
 
+# - 2026/04/17 ver 0.8 交互作用plotをplotly化して、1−2、3−2、1−3次元も描画した。　
 # - 2026/04/06 ver 0.7 個体グラフ描画をplotlyを使うものに変更（変数マップでは文字が消える）
 # - 2026/02/24 ver 0.6 initial release
 
@@ -36,12 +37,14 @@ ui <- fluidPage(
       # 動的に生成する UI（df が読み込まれた後に表示）
       uiOutput("variable_selectors"),
       uiOutput("junk_selector"),
+      hr(),
+      downloadButton("download_mca", "speMCA結果をダウンロード"),
       uiOutput("supvar_selectors"),
       uiOutput("interaction_selectors"),
       uiOutput("ellipse_selectors"),
 
-      hr(),
-      downloadButton("download_mca", "speMCA結果をダウンロード")
+#      hr(),
+#      downloadButton("download_mca", "speMCA結果をダウンロード")
     ),
 
     mainPanel(
@@ -58,9 +61,13 @@ ui <- fluidPage(
                  plotlyOutput("ind_map_13", height = "600px")),
         tabPanel("データ表示", DTOutput("data_table")),
         tabPanel("supvarsの情報", verbatimTextOutput("supvars_out")),
-        tabPanel("変数マップ＋supvars", plotlyOutput("supvars_map")),
-        tabPanel("交互作用plot", plotOutput("interaction_map")),
-        tabPanel("集中楕円", plotOutput("kellipses_map"))
+        tabPanel("変数マップ＋supvars", plotOutput("supvars_map", height = "600px")),
+        tabPanel("交互作用plot", plotOutput("interaction_map", height = "600px")),
+        tabPanel("集中楕円",
+                 plotlyOutput("kellipses_map_12", height = "600px"),
+                 plotlyOutput("kellipses_map_32", height = "600px"),
+                 plotlyOutput("kellipses_map_13", height = "600px")
+                 )
       )
     )
   )
@@ -356,15 +363,15 @@ server <- function(input, output, session) {
     if (is.null(res)) "supvarsの結果がありません" else print(res)
   })
 
-  output$supvars_map <- renderPlotly({
+  output$supvars_map <- renderPlot({
     req(mca_result(), input$supvars)
     res <- mca_result()
     df <- df_reactive()
     tryCatch({
       base_map <- GDAtools::ggcloud_variables(res, col = "lightgrey")
-      p <- GDAtools::ggadd_supvars(p = base_map, resmca = res, vars = df %>% select(all_of(input$supvars))) +
+      GDAtools::ggadd_supvars(p = base_map, resmca = res, vars = df %>% select(all_of(input$supvars))) +
         theme(aspect.ratio = 1)
-      p
+
       # ggplotly(p, tooltip = "all") %>%
       #   layout(
       #     # y軸とx軸の比率を 1:1 に固定
@@ -400,10 +407,11 @@ server <- function(input, output, session) {
   #  集中楕円（GDAtools::ggadd_kellipses）
   #  → 引数: base map(indiv), resmca, var=factor, sel=選択カテゴリの番号（整数ベクトル）
   # ------------------------
-  output$kellipses_map <- renderPlot({
+  output$kellipses_map_12 <- renderPlotly({
     req(mca_result(), input$var_ellipses, input$selected_categories)
     res <- mca_result()
     df <- df_reactive()
+    axes_v <- c(1,2)
 
     # 因子化してレベル順を得る
     var_factor <- as.factor(df[[input$var_ellipses]])
@@ -411,15 +419,60 @@ server <- function(input, output, session) {
     sel_index <- which(levels_var %in% input$selected_categories)
 
     tryCatch({
-      base_map_ind <- GDAtools::ggcloud_indiv(res, col = "lightgrey")
-      GDAtools::ggadd_kellipses(p = base_map_ind, resmca = res,
+      base_map_ind <- GDAtools::ggcloud_indiv(res, axes = axes_v,col = "lightgrey")
+      (GDAtools::ggadd_kellipses(p = base_map_ind, resmca = res,axes = axes_v,
                                 var = var_factor, sel = sel_index) +
-        coord_fixed(ratio = 1)
+        coord_fixed(ratio = 1)) %>% ggplotly(tooltip = "all")
     }, error = function(e) {
       message("ggadd_kellipses エラー: ", e$message)
       NULL
     })
-  }, height = 600)
+  })#, height = 600)
+
+
+  output$kellipses_map_32 <- renderPlotly({
+    req(mca_result(), input$var_ellipses, input$selected_categories)
+    res <- mca_result()
+    df <- df_reactive()
+    axes_v <- c(3,2)
+
+    # 因子化してレベル順を得る
+    var_factor <- as.factor(df[[input$var_ellipses]])
+    levels_var <- levels(var_factor)
+    sel_index <- which(levels_var %in% input$selected_categories)
+
+    tryCatch({
+      base_map_ind <- GDAtools::ggcloud_indiv(res, axes = axes_v,col = "lightgrey")
+      (GDAtools::ggadd_kellipses(p = base_map_ind, resmca = res,axes = axes_v,
+                                 var = var_factor, sel = sel_index) +
+          coord_fixed(ratio = 1)) %>% ggplotly(tooltip = "all")
+    }, error = function(e) {
+      message("ggadd_kellipses エラー: ", e$message)
+      NULL
+    })
+  })#, height = 600)
+
+  output$kellipses_map_13 <- renderPlotly({
+    req(mca_result(), input$var_ellipses, input$selected_categories)
+    res <- mca_result()
+    df <- df_reactive()
+    axes_v <- c(1,3)
+
+    # 因子化してレベル順を得る
+    var_factor <- as.factor(df[[input$var_ellipses]])
+    levels_var <- levels(var_factor)
+    sel_index <- which(levels_var %in% input$selected_categories)
+
+    tryCatch({
+      base_map_ind <- GDAtools::ggcloud_indiv(res, axes = axes_v,col = "lightgrey")
+      (GDAtools::ggadd_kellipses(p = base_map_ind, resmca = res,axes = axes_v,
+                                 var = var_factor, sel = sel_index) +
+          coord_fixed(ratio = 1)) %>% ggplotly(tooltip = "all")
+    }, error = function(e) {
+      message("ggadd_kellipses エラー: ", e$message)
+      NULL
+    })
+  })#, height = 600)
 
   # ------------------------
   #  ダウンロード（speMCA結果）
@@ -434,7 +487,7 @@ server <- function(input, output, session) {
         showNotification("MCA結果がありません。", type = "error")
         return(NULL)
       }
-      browser()
+#      browser()
       saveRDS(res, file)
     }
   )
