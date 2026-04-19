@@ -13,6 +13,7 @@ showtext::showtext_auto(TRUE)
 
 ## 履歴
 
+# - 2026/04/19 ver0.91 eta2グラフを、active、追加変数統合して表示。1−2軸、3−2軸、1−3軸
 # - 2026/04/17 ver 0.8 交互作用plotをplotly化して、1−2、3−2、1−3次元も描画した。　
 # - 2026/04/06 ver 0.7 個体グラフ描画をplotlyを使うものに変更（変数マップでは文字が消える）
 # - 2026/02/24 ver 0.6 initial release
@@ -65,6 +66,10 @@ ui <- fluidPage(
                  plotOutput("var_map_12", height = "1200px"),
                  plotOutput("var_map_32", height = "1200px"),
                  plotOutput("var_map_13", height = "1200px")),
+        tabPanel("η2マップ",
+                 plotOutput("eta2_map_12"),# height="1200px"),
+                 plotOutput("eta2_map_32"),
+                 plotOutput("eta2_map_13")),
         tabPanel("個体マップ",
                  plotlyOutput("ind_map_12", height = "80vh"),
                  plotlyOutput("ind_map_32", height = "80vh"),
@@ -372,6 +377,122 @@ server <- function(input, output, session) {
       labs(x = "次元", y = "修正慣性率", title = "修正慣性率と累積慣性率") +
       theme_minimal()
   })
+
+# η2マップ ----
+## 1-2 軸 ----
+  output$eta2_map_12 <- renderPlot({
+    res <- mca_result()
+    req(res)
+    req(input$supvars)
+    eta2_coord <- GDAtools::dimeta2(res,df_reactive() %>% select(all_of(input$supvars)),dim = c(1,2))
+    p <- GDAtools::ggeta2_variables(resmca = res,axes = c(1,2)) + theme(aspect.ratio = 1) + ggtitle("η2マップ1−2軸")
+　　supv <- input$supvars
+    coord_eta2_sup <- dimeta2(resmca = res,
+                              vars = df_reactive() %>% select(all_of(input$supvars)),
+                              dim = c(1,2)) %>%
+      as_tibble() %>%
+      mutate(
+        vnames = input$supvars,
+        dim.1 = dim.1 / 100,
+        dim.2 = dim.2 / 100
+      ) %>%
+      select(vnames, dim.1, dim.2)
+
+    p <- p +
+      # ポイントの追加
+      geom_point(
+        data = coord_eta2_sup,
+        aes(x = dim.1, y = dim.2),
+        size = 2,
+        color = "blue" # active変数と区別するために色を付けると見やすいです
+      ) +
+      # ラベルの追加
+      geom_text_repel(
+        data = coord_eta2_sup,
+        aes(x = dim.1, y = dim.2, label = vnames),
+        size = 3,            # 文字の大きさ
+        vjust = -1,          # 少し上にずらす（geom_textの場合）
+        box.padding = 0.5    # ラベル同士の距離を調整（ggrepelの場合）
+      )
+    p
+  })
+
+  ## 3-2 軸 ----
+  output$eta2_map_32 <- renderPlot({
+    res <- mca_result()
+    req(res)
+    req(input$supvars)
+    eta2_coord <- GDAtools::dimeta2(res,df_reactive() %>% select(all_of(input$supvars)),dim = c(3,2))
+    p <- GDAtools::ggeta2_variables(resmca = res,axes = c(3,2)) + theme(aspect.ratio = 1) + ggtitle("η2マップ3-2軸")
+    supv <- input$supvars
+    coord_eta2_sup <- dimeta2(resmca = res,
+                              vars = df_reactive() %>% select(all_of(input$supvars)),
+                              dim = c(3,2)) %>%
+      as_tibble() %>%
+      mutate(
+        vnames = input$supvars,
+        dim.3 = dim.3 / 100,
+        dim.2 = dim.2 / 100
+      ) %>%
+      select(vnames, dim.3, dim.2)
+
+    p <- p +
+      # ポイントの追加
+      geom_point(
+        data = coord_eta2_sup,
+        aes(x = dim.3, y = dim.2),
+        size = 2,
+        color = "blue" # active変数と区別するために色を付けると見やすいです
+      ) +
+      # ラベルの追加
+      geom_text_repel(
+        data = coord_eta2_sup,
+        aes(x = dim.3, y = dim.2, label = vnames),
+        size = 3,            # 文字の大きさ
+        vjust = -1,          # 少し上にずらす（geom_textの場合）
+        box.padding = 0.5    # ラベル同士の距離を調整（ggrepelの場合）
+      )
+    p
+  })
+
+  ## 1-3 軸 ----
+  output$eta2_map_13 <- renderPlot({
+    res <- mca_result()
+    req(res)
+    req(input$supvars)
+    eta2_coord <- GDAtools::dimeta2(res,df_reactive() %>% select(all_of(input$supvars)),dim = c(1,3))
+    p <- GDAtools::ggeta2_variables(resmca = res,axes = c(1,3)) + theme(aspect.ratio = 1) + ggtitle("η2マップ1-3軸")
+    supv <- input$supvars
+    coord_eta2_sup <- dimeta2(resmca = res,
+                              vars = df_reactive() %>% select(all_of(input$supvars)),
+                              dim = c(1,3)) %>%
+      as_tibble() %>%
+      mutate(
+        vnames = input$supvars,
+        dim.1 = dim.1 / 100,
+        dim.3 = dim.3 / 100
+      ) %>%
+      select(vnames, dim.1, dim.3)
+
+    p <- p +
+      # ポイントの追加
+      geom_point(
+        data = coord_eta2_sup,
+        aes(x = dim.1, y = dim.3),
+        size = 2,
+        color = "blue" # active変数と区別するために色を付けると見やすいです
+      ) +
+      # ラベルの追加
+      geom_text_repel(
+        data = coord_eta2_sup,
+        aes(x = dim.1, y = dim.3, label = vnames),
+        size = 3,            # 文字の大きさ
+        vjust = -1,          # 少し上にずらす（geom_textの場合）
+        box.padding = 0.5    # ラベル同士の距離を調整（ggrepelの場合）
+      )
+    p
+  })
+
 
 #  変数マップ（3枚）----
   output$var_map_12 <- renderPlot({ # plotly に渡すと、文字が消えてしますので、中断
