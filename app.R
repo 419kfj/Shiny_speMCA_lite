@@ -21,11 +21,21 @@ showtext::showtext_auto(TRUE)
 desc_info <- read.dcf("DESCRIPTION")
 app_version <- desc_info[1, "Version"]
 
-# ui
+# is_debug_mode <- file.exists("./code_check/debug_data.rds")
+#
+# # 2. データの準備（アプリ起動時に1回だけ実行される）
+# if (is_debug_mode) {
+#   # デバッグ時は保存済みのRDSを読み込む
+#   mca_result <- readRDS("./code_check/debug_data.rds")
+#   message("Debug Mode: Loaded data from RDS.")
+# }
+# #message("Production Mode: Processing data...")
+
+# ui ----
 ui <- fluidPage(
   #  shinyWidgets::useShinyWidgets(),
   titlePanel("speMCA 分析アプリ"),
-  sidebarLayout(
+  sidebarLayout( ## sidebarLayout ----
     sidebarPanel(
       # バージョン情報の表示
       helpText(paste("Version:", app_version)),
@@ -47,37 +57,37 @@ ui <- fluidPage(
 #      downloadButton("download_mca", "speMCA結果をダウンロード")
     ),
 
-    mainPanel(
+    mainPanel( ## mainPanel ----
       tabsetPanel(
         tabPanel("選択変数", uiOutput("selected_info")),
         tabPanel("修正慣性率", tableOutput("eig_table"), plotOutput("eig_plot")),
         tabPanel("変数マップ",
-                 plotOutput("var_map_12", height = "600px"),
-                 plotOutput("var_map_32", height = "600px"),
-                 plotOutput("var_map_13", height = "600px")),
+                 plotOutput("var_map_12", height = "1200px"),
+                 plotOutput("var_map_32", height = "1200px"),
+                 plotOutput("var_map_13", height = "1200px")),
         tabPanel("個体マップ",
-                 plotlyOutput("ind_map_12", height = "600px"),
-                 plotlyOutput("ind_map_32", height = "600px"),
-                 plotlyOutput("ind_map_13", height = "600px")),
+                 plotlyOutput("ind_map_12", height = "80vh"),
+                 plotlyOutput("ind_map_32", height = "80vh"),
+                 plotlyOutput("ind_map_13", height = "80vh")),
         tabPanel("データ表示", DTOutput("data_table")),
         tabPanel("supvarsの情報", verbatimTextOutput("supvars_out")),
-        tabPanel("変数マップ＋supvars", plotOutput("supvars_map", height = "600px")),
-        tabPanel("交互作用plot", plotOutput("interaction_map", height = "600px")),
+        tabPanel("変数マップ＋supvars", plotOutput("supvars_map", height = "1200px")),
+        tabPanel("交互作用plot", plotOutput("interaction_map", height = "1200px")), # plotlyだと文字がでない
         tabPanel("集中楕円",
-                 plotlyOutput("kellipses_map_12", height = "600px"),
-                 plotlyOutput("kellipses_map_32", height = "600px"),
-                 plotlyOutput("kellipses_map_13", height = "600px")
+                 plotlyOutput("kellipses_map_12", height = "80vh"),
+                 plotlyOutput("kellipses_map_32", height = "80vh"),
+                 plotlyOutput("kellipses_map_13", height = "80vh")
                  )
       )
     )
   )
 )
 
+# server =====
 server <- function(input, output, session) {
 
-  # ------------------------
-  #  .rda 読み込み：load ボタンで eventReactive
-  # ------------------------
+## rda 読み込み：load ボタンで eventReactive ----
+
   dataset <- eventReactive(input$load_rda, {
     req(input$file)
     e <- new.env()
@@ -87,15 +97,15 @@ server <- function(input, output, session) {
     objs
   })
 
-  # df として使う（.rda の最初のオブジェクト）
+# （.rda の最初のオブジェクトを）df として使う ----
   df_reactive <- reactive({
     req(dataset())
     dataset()[[1]]
   })
 
-  # ------------------------
-  #  動的 UI（df があるとき）
-  # ------------------------
+# 動的 UI（df があるとき）
+
+# Active変数の選択 -------------------------------------------------------------
   output$variable_selectors <- renderUI({
     req(df_reactive())
     choices <- names(df_reactive())
@@ -103,6 +113,7 @@ server <- function(input, output, session) {
                 choices = choices, multiple = TRUE, selectize = FALSE, size = 7)
   })
 
+# 追加変数の選択 -----------------------------------------------------------------
   output$supvar_selectors <- renderUI({
     req(df_reactive())
     choices <- names(df_reactive())
@@ -110,15 +121,45 @@ server <- function(input, output, session) {
                 choices = choices, multiple = TRUE, selectize = FALSE, size = 7)
   })
 
+# 交互作用変数の選択 ----
   output$interaction_selectors <- renderUI({
     req(df_reactive())
     choices <- names(df_reactive())
     tagList(
-      selectInput("inter_v1", "交互作用 v1 を選んでください", choices = choices, selected = choices[1]),
-      selectInput("inter_v2", "交互作用 v2 を選んでください", choices = choices, selected = choices[min(2,length(choices))])
+      selectInput("inter_v1", "交互作用 v1 を選んでください",
+                  choices = choices, selected = choices[1]),
+      uiOutput("inter_v1_selector"),
+      selectInput("inter_v2", "交互作用 v2 を選んでください",
+                  choices = choices, selected = choices[min(2,length(choices))]),
+      uiOutput("inter_v2_selector")
     )
   })
 
+  ### 交互作用変数 v1 の「全選択/全解除」----
+  observeEvent(input$select_v1_all, {
+    req(input$inter_v1)
+    df <- df_reactive()
+    v1lv <- levels(as.factor(df[[input$inter_v1]]))
+    updateCheckboxGroupInput(session, "selected_categories_v1", selected = v1lv)
+  })
+  observeEvent(input$deselect_v1_all, {
+    updateCheckboxGroupInput(session, "selected_categories_v1", selected = character(0))
+  })
+
+
+  ### 交互作用変数 v2 の「全選択/全解除」----
+  observeEvent(input$select_v2_all, {
+    req(input$inter_v2)
+    df <- df_reactive()
+    v2lv <- levels(as.factor(df[[input$inter_v2]]))
+    updateCheckboxGroupInput(session, "selected_categories_v2", selected = v2lv)
+  })
+  observeEvent(input$deselect_v2_all, {
+    updateCheckboxGroupInput(session, "selected_categories_v2", selected = character(0))
+  })
+
+
+# 集中楕円変数の選択 ----
   output$ellipse_selectors <- renderUI({
     req(df_reactive())
     choices <- names(df_reactive())
@@ -129,9 +170,8 @@ server <- function(input, output, session) {
     )
   })
 
-  # ------------------------
-  # 全選択／全解除ボタンの動作
-  # ------------------------
+
+## 集中楕円変数の「全選択/全解除」----
   observeEvent(input$select_all, {
     req(input$var_ellipses)
     df <- df_reactive()
@@ -144,11 +184,8 @@ server <- function(input, output, session) {
   })
 
 
-
-  # ------------------------
-  #  junkカテゴリ（getindexcat を使う）
+# junkカテゴリの選択（getindexcat を使う）----
   #  ※ input$variables が2個以上必要（getindexcat の前提）
-  # ------------------------
   junk_cat <- reactive({
     req(df_reactive())
     if (is.null(input$variables) || length(input$variables) < 2) return(NULL)
@@ -159,6 +196,8 @@ server <- function(input, output, session) {
     jc
   })
 
+
+### juck selector ----
   output$junk_selector <- renderUI({
     jc <- junk_cat()
     if (is.null(jc)) return(NULL)
@@ -170,9 +209,8 @@ server <- function(input, output, session) {
     )
   })
 
-  # ------------------------
-  #  speMCA 実行（ボタン押下で eventReactive）
-  # ------------------------
+# speMCA 実行（ボタン押下で eventReactive）----
+
   mca_result <- eventReactive(input$run_mca, {
     req(df_reactive())
     req(input$variables)
@@ -190,27 +228,68 @@ server <- function(input, output, session) {
     }
     tryCatch({
       speMCA(df_sub, excl = excl_indices)
-    }, error = function(e) {
+    }, error = function(e) { # ----
       showNotification(paste0("speMCA エラー: ", e$message), type = "error")
       NULL
     })
   })
 
-  # ------------------------
-  #  supvars の計算（mca_result と input$supvars に依存）
-  # ------------------------
+# supvars の計算（mca_result と input$supvars に依存）----
   supvars_result <- reactive({
     req(mca_result())
     if (is.null(input$supvars) || length(input$supvars) == 0) return(NULL)
     df <- df_reactive()
     tryCatch({
       GDAtools::supvars(resmca = mca_result(), vars = df %>% select(all_of(input$supvars)))
-    }, error = function(e) {
+    }, error = function(e) { # ----
       message("supvars エラー: ", e$message)
       NULL
     })
   })
 
+
+# 交互作用変数 v1 のセレクタ生成 ----
+  output$inter_v1_selector <- renderUI({
+    req(df_reactive(), input$inter_v1)
+    df <- df_reactive()
+    v1lv <- levels(as.factor(df[[input$inter_v1]]))
+
+    tagList(
+      fluidRow(
+        column(6, actionButton("select_v1_all", "全選択")),
+        column(6, actionButton("deselect_v1_all", "全解除"))
+      ),
+      checkboxGroupInput(
+        inputId = "selected_categories_v1", # <--- これが input$selected_categories_v1 になる
+        label = "表示するカテゴリを選んでください",
+        choices = v1lv,
+        selected = v1lv # 初期値として全選択
+      )
+    )
+  })
+
+  # 交互作用変数 v2 のセレクタ生成 ----
+  output$inter_v2_selector <- renderUI({
+    req(df_reactive(), input$inter_v1)
+    df <- df_reactive()
+    v2lv <- levels(as.factor(df[[input$inter_v2]]))
+
+    tagList(
+      fluidRow(
+        column(6, actionButton("select_v2_all", "全選択")),
+        column(6, actionButton("deselect_v2_all", "全解除"))
+      ),
+      checkboxGroupInput(
+        inputId = "selected_categories_v2", # <--- これが input$selected_categories_v2 になる
+        label = "表示するカテゴリを選んでください",
+        choices = v2lv,
+        selected = v2lv # 初期値として全選択
+      )
+    )
+  })
+
+
+# 集中楕円変数 のカテゴリセレクタ -----------------------
   output$kellipses_cat_selector <- renderUI({
     req(df_reactive())
     req(input$var_ellipses)
@@ -233,9 +312,7 @@ server <- function(input, output, session) {
   })
 
 
-  # ------------------------
-  #  選択変数タブ（常に input に基づいて表示）
-  # ------------------------
+#  選択変数タブ（常に input に基づいて表示）----
   output$selected_info <- renderUI({
     req(df_reactive())  # df が読み込まれていること
     vars <- input$variables
@@ -266,9 +343,7 @@ server <- function(input, output, session) {
     )
   })
 
-  # ------------------------
-  #  結果表示：データ表 / 修正慣性率
-  # ------------------------
+# 結果表示：データ表 / 修正慣性率 ----
   output$data_table <- renderDT({
     req(df_reactive())
     datatable(df_reactive(), options = list(pageLength = 10))
@@ -298,9 +373,7 @@ server <- function(input, output, session) {
       theme_minimal()
   })
 
-  # ------------------------
-  #  変数マップ（3枚）
-  # ------------------------
+#  変数マップ（3枚）----
   output$var_map_12 <- renderPlot({ # plotly に渡すと、文字が消えてしますので、中断
     res <- mca_result(); req(res)
     p <- GDAtools::ggcloud_variables(res) + theme(aspect.ratio = 1) + ggtitle("変数マップ 1-2軸")
@@ -321,9 +394,7 @@ server <- function(input, output, session) {
     GDAtools::ggcloud_variables(res, axes = c(1,3)) + theme(aspect.ratio = 1) + ggtitle("変数マップ 1-3軸")
   })
 
-  # ------------------------
-  #  個体マップ（3枚）
-  # ------------------------
+#  個体マップ（3枚）----
   output$ind_map_12 <- renderPlotly({
     res <- mca_result(); req(res)
     p <- GDAtools::ggcloud_indiv(res) + theme(aspect.ratio = 1) + ggtitle("個体マップ 1-2軸")
@@ -355,9 +426,7 @@ server <- function(input, output, session) {
       )
   })
 
-  # ------------------------
-  #  supvars の出力とマップ（GDAtools::ggadd_supvars）
-  # ------------------------
+#  supvars の出力とマップ（GDAtools::ggadd_supvars） -----
   output$supvars_out <- renderPrint({
     res <- supvars_result()
     if (is.null(res)) "supvarsの結果がありません" else print(res)
@@ -378,35 +447,48 @@ server <- function(input, output, session) {
       #     yaxis = list(scaleanchor = "x", scaleratio = 1),
       #     hoverlabel = list(bgcolor = "white", font = list(color = "black"))
       #   )
-    }, error = function(e) {
+    }, error = function(e) { # ----
       message("ggadd_supvars エラー: ", e$message)
       NULL
     })
   })
 
-  # ------------------------
-  #  交互作用（GDAtools::ggadd_interaction）
-  # ------------------------
-  output$interaction_map <- renderPlot({
-    req(mca_result(), input$inter_v1, input$inter_v2)
+# 交互作用プロット（GDAtools::ggadd_interaction）　----
+    output$interaction_map <- renderPlot({
+    # 【重要】UIそのものではなく、UIの中の「値」を待つ
+    req(mca_result(),
+        input$inter_v1,
+        input$inter_v2,
+        input$selected_categories_v1, # ここを outputID から変更
+        input$selected_categories_v2) # ここを outputID から変更
+
     res <- mca_result()
     df <- df_reactive()
+
+    # --- データのフィルタリング処理 ---
+    v1_f <- df[[input$inter_v1]]
+    v1_f[!(v1_f %in% input$selected_categories_v1)] <- NA
+
+    v2_f <- df[[input$inter_v2]]
+    v2_f[!(v2_f %in% input$selected_categories_v2)] <- NA
+    # ------------------------------
+
     tryCatch({
-      base_map <- GDAtools::ggcloud_variables(res, col = "lightgrey")
-      GDAtools::ggadd_interaction(p = base_map, resmca = res,
-                                  v1 = df[[input$inter_v1]],
-                                  v2 = df[[input$inter_v2]]) +
-        theme(aspect.ratio = 1)
+      base_map <- GDAtools::ggcloud_indiv(res, col = "lightgrey")
+      (GDAtools::ggadd_interaction(p = base_map, resmca = res,
+                                  v1 = v1_f,
+                                  v2 = v2_f) +
+        theme(aspect.ratio = 1)) #%>% ggplotly()
     }, error = function(e) {
       message("ggadd_interaction エラー: ", e$message)
       NULL
     })
-  }, height = 600)
+  })#, height = 600)
 
-  # ------------------------
-  #  集中楕円（GDAtools::ggadd_kellipses）
+
+# 集中楕円（GDAtools::ggadd_kellipses）----
   #  → 引数: base map(indiv), resmca, var=factor, sel=選択カテゴリの番号（整数ベクトル）
-  # ------------------------
+
   output$kellipses_map_12 <- renderPlotly({
     req(mca_result(), input$var_ellipses, input$selected_categories)
     res <- mca_result()
@@ -423,7 +505,7 @@ server <- function(input, output, session) {
       (GDAtools::ggadd_kellipses(p = base_map_ind, resmca = res,axes = axes_v,
                                 var = var_factor, sel = sel_index) +
         coord_fixed(ratio = 1)) %>% ggplotly(tooltip = "all")
-    }, error = function(e) {
+    }, error = function(e) { # ggadd_kellipses エラー----
       message("ggadd_kellipses エラー: ", e$message)
       NULL
     })
@@ -446,7 +528,7 @@ server <- function(input, output, session) {
       (GDAtools::ggadd_kellipses(p = base_map_ind, resmca = res,axes = axes_v,
                                  var = var_factor, sel = sel_index) +
           coord_fixed(ratio = 1)) %>% ggplotly(tooltip = "all")
-    }, error = function(e) {
+    }, error = function(e) { # ggadd_kellipses エラー: ----
       message("ggadd_kellipses エラー: ", e$message)
       NULL
     })
@@ -468,29 +550,30 @@ server <- function(input, output, session) {
       (GDAtools::ggadd_kellipses(p = base_map_ind, resmca = res,axes = axes_v,
                                  var = var_factor, sel = sel_index) +
           coord_fixed(ratio = 1)) %>% ggplotly(tooltip = "all")
-    }, error = function(e) {
+    }, error = function(e) { # ----
       message("ggadd_kellipses エラー: ", e$message)
       NULL
     })
   })#, height = 600)
 
-  # ------------------------
-  #  ダウンロード（speMCA結果）
-  # ------------------------
-  output$download_mca <- downloadHandler(
+#  ダウンロード（speMCA結果） ------------------------
+
+    output$download_mca <- downloadHandler(
     filename = function() {
       paste0("speMCA_result_", Sys.Date(), ".rds")
     },
-    content = function(file) {
+    content = function(file) { # ----
       res <- mca_result()
       if (is.null(res)) {
         showNotification("MCA結果がありません。", type = "error")
         return(NULL)
       }
-#      browser()
       saveRDS(res, file)
     }
   )
 }
+
+
+# shinyApp(ui,server) -----
 
 shinyApp(ui, server)
