@@ -13,6 +13,7 @@ showtext::showtext_auto(TRUE)
 
 ## 履歴
 
+# - 2026/04/19 ver0.92 使い方のlinkを追加。使い方は、quarto doc でwww.fujimotolabo.uk/Shiny_app_how2/
 # - 2026/04/19 ver0.91 eta2グラフを、active、追加変数統合して表示。1−2軸、3−2軸、1−3軸
 # - 2026/04/17 ver 0.8 交互作用plotをplotly化して、1−2、3−2、1−3次元も描画した。　
 # - 2026/04/06 ver 0.7 個体グラフ描画をplotlyを使うものに変更（変数マップでは文字が消える）
@@ -82,7 +83,13 @@ ui <- fluidPage(
                  plotlyOutput("kellipses_map_12", height = "80vh"),
                  plotlyOutput("kellipses_map_32", height = "80vh"),
                  plotlyOutput("kellipses_map_13", height = "80vh")
-                 )
+                 ),
+        tabPanel("使い方",
+                 p("アプリの詳細な使い方は、以下のリンク先をご確認ください。"),
+                 a("Shinyアプリの使い方ガイド（外部サイト）",
+                   href = "https://www.fujimotolabo.uk/Shiny_app_how2/",
+                   target = "_blank") # 新しいタブで開く設定
+        )
       )
     )
   )
