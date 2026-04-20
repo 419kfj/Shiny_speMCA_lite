@@ -3,6 +3,7 @@
 library(shiny)
 library(GDAtools)
 library(tidyverse)
+library(ggrepel)
 library(DT)
 library(plotly)
 library(showtext)
@@ -387,6 +388,53 @@ server <- function(input, output, session) {
 
 # η2マップ ----
 ## 1-2 軸 ----
+
+  draw_eta2_map <- function(mca_data, axes, title){
+    eta2_coord <- GDAtools::dimeta2(mca_data,df_reactive() %>% select(all_of(input$supvars)),dim = axes)
+    p <- GDAtools::ggeta2_variables(resmca = mca_data,axes = axes) + theme(aspect.ratio = 1) + ggtitle("η2マップ1−2軸")
+    supv <- input$supvars
+    coord_eta2_sup <- dimeta2(resmca = mca_data,
+                              vars = df_reactive() %>% select(all_of(input$supvars)),
+                              dim = axes) %>%
+      as_tibble() %>%
+      mutate(
+        vnames = input$supvars,
+        dim.1 = dim.1 / 100,
+        dim.2 = dim.2 / 100
+      ) %>% select(1,2,3)
+
+    p <- p +
+      # ポイントの追加
+      geom_point(
+        data = coord_eta2_sup,
+        aes(x = dim.1, y = dim.2),
+        size = 2,
+        color = "blue" # active変数と区別するために色を付けると見やすいです
+      ) +
+      # ラベルの追加
+      geom_text_repel(
+        data = coord_eta2_sup,
+        aes(x = dim.1, y = dim.2, label = vnames),
+        size = 3,            # 文字の大きさ
+        vjust = -1,          # 少し上にずらす（geom_textの場合）
+        box.padding = 0.5    # ラベル同士の距離を調整（ggrepelの場合）
+      )
+    p
+  }
+
+
+  # draw_ind_plot <- function(mca_data, axes, title) {
+  #   # ここでは mca_result() ではなく、引数の mca_data を使う
+  #   p <- GDAtools::ggcloud_indiv(mca_data, axes = axes) +
+  #     theme(aspect.ratio = 1) +
+  #     ggtitle(title)
+  #
+  #   ggplotly(p, tooltip = "text") %>%
+  #     layout(yaxis = list(scaleanchor = "x", scaleratio = 1))
+  # }
+  #
+
+
   output$eta2_map_12 <- renderPlot({
     res <- mca_result()
     req(res)
@@ -502,57 +550,67 @@ server <- function(input, output, session) {
 
 
 #  変数マップ（3枚）----
-  output$var_map_12 <- renderPlot({ # plotly に渡すと、文字が消えてしますので、中断
-    res <- mca_result(); req(res)
-    p <- GDAtools::ggcloud_variables(res) + theme(aspect.ratio = 1) + ggtitle("変数マップ 1-2軸")
+
+  draw_vari_plot <- function(mca_data, axes, title) {
+    # ここでは mca_result() ではなく、引数の mca_data を使う
+    p <- GDAtools::ggcloud_variables(mca_data, axes = axes) +
+      theme(aspect.ratio = 1) +
+      ggtitle(title)
     p
-    # ggplotly(p, tooltip = "text") %>%
-    #   layout(
-    #     # y軸とx軸の比率を 1:1 に固定
-    #     yaxis = list(scaleanchor = "x", scaleratio = 1),
-    #     hoverlabel = list(bgcolor = "white", font = list(color = "black"))
-    #   )
-  })
-  output$var_map_32 <- renderPlot({
-    res <- mca_result(); req(res)
-    GDAtools::ggcloud_variables(res, axes = c(3,2)) + theme(aspect.ratio = 1) + ggtitle("変数マップ 3-2軸")
-  })
-  output$var_map_13 <- renderPlot({
-    res <- mca_result(); req(res)
-    GDAtools::ggcloud_variables(res, axes = c(1,3)) + theme(aspect.ratio = 1) + ggtitle("変数マップ 1-3軸")
+  }
+
+  output$var_map_12 <- renderPlot({
+    res <- mca_result() # Reactiveから値を取り出す
+    req(res)            # データがあるか確認
+    draw_vari_plot(res, c(1, 2), "変数マップ 1-2軸")
   })
 
+  output$var_map_32 <- renderPlot({
+  res <- mca_result() # Reactiveから値を取り出す
+  req(res)            # データがあるか確認
+  draw_vari_plot(res, c(3, 2), "変数マップ 3-2軸")
+})
+
+  output$var_map_13 <- renderPlot({
+    res <- mca_result() # Reactiveから値を取り出す
+    req(res)            # データがあるか確認
+    draw_vari_plot(res, c(1, 3), "変数マップ 1-3軸")
+  })
+
+
 #  個体マップ（3枚）----
+
+  # 1. outputのすぐ近くに定義（カプセル化）
+  draw_ind_plot <- function(mca_data, axes, title) {
+    # ここでは mca_result() ではなく、引数の mca_data を使う
+    p <- GDAtools::ggcloud_indiv(mca_data, axes = axes) +
+      theme(aspect.ratio = 1) +
+      ggtitle(title)
+
+    ggplotly(p, tooltip = "text") %>%
+      layout(yaxis = list(scaleanchor = "x", scaleratio = 1))
+  }
+
+  # 2. 呼び出し
   output$ind_map_12 <- renderPlotly({
-    res <- mca_result(); req(res)
-    p <- GDAtools::ggcloud_indiv(res) + theme(aspect.ratio = 1) + ggtitle("個体マップ 1-2軸")
-    ggplotly(p, tooltip = "text") %>%
-      layout(
-        # y軸とx軸の比率を 1:1 に固定
-        yaxis = list(scaleanchor = "x", scaleratio = 1),
-        hoverlabel = list(bgcolor = "white", font = list(color = "black"))
-      )
+    res <- mca_result() # Reactiveから値を取り出す
+    req(res)            # データがあるか確認
+    draw_ind_plot(res, c(1, 2), "個体マップ 1-2軸")
   })
+
   output$ind_map_32 <- renderPlotly({
-    res <- mca_result(); req(res)
-    p <- GDAtools::ggcloud_indiv(res, axes = c(3,2)) + theme(aspect.ratio = 1) + ggtitle("個体マップ 3-2軸")
-    ggplotly(p, tooltip = "text") %>%
-      layout(
-        # y軸とx軸の比率を 1:1 に固定
-        yaxis = list(scaleanchor = "x", scaleratio = 1),
-        hoverlabel = list(bgcolor = "white", font = list(color = "black"))
-      )
+    res <- mca_result() # Reactiveから値を取り出す
+    req(res)            # データがあるか確認
+    draw_ind_plot(res, c(3, 2), "個体マップ 3-2軸")
   })
+
+
   output$ind_map_13 <- renderPlotly({
-    res <- mca_result(); req(res)
-    p <- GDAtools::ggcloud_indiv(res, axes = c(1,3)) + theme(aspect.ratio = 1) + ggtitle("個体マップ 1-3軸")
-    ggplotly(p, tooltip = "text") %>%
-      layout(
-        # y軸とx軸の比率を 1:1 に固定
-        yaxis = list(scaleanchor = "x", scaleratio = 1),
-        hoverlabel = list(bgcolor = "white", font = list(color = "black"))
-      )
+    res <- mca_result() # Reactiveから値を取り出す
+    req(res)            # データがあるか確認
+    draw_ind_plot(res, c(1, 3), "個体マップ 1-3軸")
   })
+
 
 #  supvars の出力とマップ（GDAtools::ggadd_supvars） -----
   output$supvars_out <- renderPrint({
