@@ -14,6 +14,7 @@ showtext::showtext_auto(TRUE)
 
 ## 履歴
 
+# - 2026/04/21 ver0.92a res.speMCAの表示を「一覧」「リスト」で追加。
 # - 2026/04/19 ver0.92 使い方のlinkを追加。使い方は、quarto doc でwww.fujimotolabo.uk/Shiny_app_how2/
 # - 2026/04/19 ver0.91 eta2グラフを、active、追加変数統合して表示。1−2軸、3−2軸、1−3軸
 # - 2026/04/17 ver 0.8 交互作用plotをplotly化して、1−2、3−2、1−3次元も描画した。　
@@ -69,9 +70,9 @@ ui <- fluidPage(
                  plotOutput("var_map_32", height = "1200px"),
                  plotOutput("var_map_13", height = "1200px")),
         tabPanel("η2マップ",
-                 plotOutput("eta2_map_12"),# height="1200px"),
-                 plotOutput("eta2_map_32"),
-                 plotOutput("eta2_map_13")),
+                 plotOutput("eta2_map_12",height = "80vh"),# height="1200px"),
+                 plotOutput("eta2_map_32",height = "80vh"),
+                 plotOutput("eta2_map_13",height = "80vh")),
         tabPanel("個体マップ",
                  plotlyOutput("ind_map_12", height = "80vh"),
                  plotlyOutput("ind_map_32", height = "80vh"),
@@ -85,6 +86,9 @@ ui <- fluidPage(
                  plotlyOutput("kellipses_map_32", height = "80vh"),
                  plotlyOutput("kellipses_map_13", height = "80vh")
                  ),
+        tabPanel("speMCAのresult:リスト",
+                 listviewer::jsoneditOutput("mca_result_tree", height = "600px")),
+        tabPanel("speMCAのresult:一覧", verbatimTextOutput("mca_result_list")),
         tabPanel("使い方",
                  p("アプリの詳細な使い方は、以下のリンク先をご確認ください。"),
                  a("Shinyアプリの使い方ガイド（外部サイト）",
@@ -247,6 +251,18 @@ server <- function(input, output, session) {
     })
   })
 
+# speMCAのresultを出力 ----
+
+  output$mca_result_list <- renderPrint({
+    # mca_result が reactive または reactiveValues 内にある場合の例
+    # もし reactive なら mca_result() と呼び出す必要があります
+    req(mca_result())
+
+    # そのまま print する、あるいは summary(mca_result) としてもOK
+    print(mca_result())
+  })
+
+
 # supvars の計算（mca_result と input$supvars に依存）----
   supvars_result <- reactive({
     req(mca_result())
@@ -355,6 +371,20 @@ server <- function(input, output, session) {
       }
     )
   })
+
+
+# res.speMCAのリスト表示 ----
+  output$mca_result_tree <- listviewer::renderJsonedit({
+    req(mca_result())
+
+    # speMCAの結果オブジェクトをそのまま渡す
+    listviewer::jsonedit(
+      mca_result(),
+      mode = "view",    # 閲覧モード
+      modes = c("view", "code") # 必要に応じてコード表示も切り替え可能
+    )
+  })
+
 
 # 結果表示：データ表 / 修正慣性率 ----
   output$data_table <- renderDT({
