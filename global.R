@@ -1,5 +1,6 @@
 # app.R 0.92aから分離 2026/04/21
 library(shiny)
+library(shinythemes)
 library(GDAtools)
 library(tidyverse)
 library(ggrepel)

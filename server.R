@@ -603,7 +603,7 @@ function(input, output, session) {
   })
 
   # 交互作用プロット（GDAtools::ggadd_interaction）　----
-  output$interaction_map <- renderPlot({
+  output$interaction_map_12 <- renderPlot({
     # 【重要】UIそのものではなく、UIの中の「値」を待つ
     req(mca_result(),
         input$inter_v1,
@@ -613,6 +613,7 @@ function(input, output, session) {
 
     res <- mca_result()
     df <- df_reactive()
+    axes <- c(1,2)
 
     # --- データのフィルタリング処理 ---
     v1_f <- df[[input$inter_v1]]
@@ -623,16 +624,84 @@ function(input, output, session) {
     # ------------------------------
 
     tryCatch({
-      base_map <- GDAtools::ggcloud_indiv(res, col = "lightgrey")
+      base_map <- GDAtools::ggcloud_variables(res, col = "lightgrey",axes = axes)
       (GDAtools::ggadd_interaction(p = base_map, resmca = res,
                                    v1 = v1_f,
-                                   v2 = v2_f) +
+                                   v2 = v2_f,axes = axes) +
           theme(aspect.ratio = 1)) #%>% ggplotly()
     }, error = function(e) {
       message("ggadd_interaction エラー: ", e$message)
       NULL
     })
   })#, height = 600)
+
+  output$interaction_map_32 <- renderPlot({
+    # 【重要】UIそのものではなく、UIの中の「値」を待つ
+    req(mca_result(),
+        input$inter_v1,
+        input$inter_v2,
+        input$selected_categories_v1, # ここを outputID から変更
+        input$selected_categories_v2) # ここを outputID から変更
+
+    res <- mca_result()
+    df <- df_reactive()
+    axes <- c(3,2)
+
+    # --- データのフィルタリング処理 ---
+    v1_f <- df[[input$inter_v1]]
+    v1_f[!(v1_f %in% input$selected_categories_v1)] <- NA
+
+    v2_f <- df[[input$inter_v2]]
+    v2_f[!(v2_f %in% input$selected_categories_v2)] <- NA
+    # ------------------------------
+
+    tryCatch({
+      base_map <- GDAtools::ggcloud_variables(res, col = "lightgrey",axes = axes)
+      (GDAtools::ggadd_interaction(p = base_map, resmca = res,
+                                   v1 = v1_f,
+                                   v2 = v2_f,axes = axes) +
+          theme(aspect.ratio = 1)) #%>% ggplotly()
+    }, error = function(e) {
+      message("ggadd_interaction エラー: ", e$message)
+      NULL
+    })
+  })#, height = 600)
+
+  output$interaction_map_13 <- renderPlot({
+    # 【重要】UIそのものではなく、UIの中の「値」を待つ
+    req(mca_result(),
+        input$inter_v1,
+        input$inter_v2,
+        input$selected_categories_v1, # ここを outputID から変更
+        input$selected_categories_v2) # ここを outputID から変更
+
+    res <- mca_result()
+    df <- df_reactive()
+    axes <- c(1,3)
+
+    # --- データのフィルタリング処理 ---
+    v1_f <- df[[input$inter_v1]]
+    v1_f[!(v1_f %in% input$selected_categories_v1)] <- NA
+
+    v2_f <- df[[input$inter_v2]]
+    v2_f[!(v2_f %in% input$selected_categories_v2)] <- NA
+    # ------------------------------
+
+    tryCatch({
+      base_map <- GDAtools::ggcloud_variables(res, col = "lightgrey",axes = axes)
+      (GDAtools::ggadd_interaction(p = base_map, resmca = res,
+                                   v1 = v1_f,
+                                   v2 = v2_f,axes = axes) +
+          theme(aspect.ratio = 1)) #%>% ggplotly()
+    }, error = function(e) {
+      message("ggadd_interaction エラー: ", e$message)
+      NULL
+    })
+  })#, height = 600)
+
+
+
+
 
 
   # 集中楕円（GDAtools::ggadd_kellipses）----
