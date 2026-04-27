@@ -5,7 +5,7 @@
 shinyUI(
 #  tagList(shinythemes::themeSelector(),
   navbarPage("speMCA分析サポート",
-       theme = shinytheme("slate"),
+      # theme = shinytheme("slate"),
        tabPanel("概要",
            h2("アプリケーション概要"),
            p("LeRoux  & Rouanet \"Multiple Correspondence Analysis\"(大隅・小野・鳰薬『多重対応分析』で紹介されているspecficMCAをGDAtoolsをベースに分析をおこないます。"),
@@ -31,7 +31,8 @@ shinyUI(
               downloadButton("download_mca", "speMCA結果をダウンロード"),
               uiOutput("supvar_selectors"),
               uiOutput("interaction_selectors"),
-              uiOutput("ellipse_selectors")
+              uiOutput("ellipse_selectors"),
+              uiOutput("hist_var_ui")
             ),
 
             mainPanel( ## mainPanel ----
@@ -42,6 +43,11 @@ shinyUI(
                             listviewer::jsoneditOutput("mca_result_tree", height = "600px")),
                    tabPanel("speMCAのresult:一覧", verbatimTextOutput("mca_result_list")),
                    tabPanel("データ表示", DTOutput("data_table")),
+                   tabPanel("単変数集計",
+                              h2("棒グラフと度数分布"),
+                              plotOutput("barchart2"),
+                              DT::dataTableOutput("simple_table2")
+                     ),
                    tabPanel("使い方",
                             p("アプリの詳細な使い方は、以下のリンク先をご確認ください。"),
                             a("Shinyアプリの使い方ガイド（外部サイト）",
@@ -98,15 +104,6 @@ shinyUI(
          )
        )),
 
-       # tabPanel("分類", sidebarLayout(
-       #   sidebarPanel(),
-       #   mainPanel(
-       #     tabsetPanel(type = "tabs",
-       #                 tabPanel("分類結果"),
-       #                 tabPanel("プロットで結果を確認")
-       #     )
-       #   )
-       # )),
 
        navbarMenu("関連リンク集",
                   tabPanel("使い方",

@@ -398,120 +398,6 @@ function(input, output, session) {
   })
 
 
-  #   output$eta2_map_12 <- renderPlot({
-  #     res <- mca_result()
-  #     req(res)
-  #     req(input$supvars)
-  #     eta2_coord <- GDAtools::dimeta2(res,df_reactive() %>% select(all_of(input$supvars)),dim = c(1,2))
-  #     p <- GDAtools::ggeta2_variables(resmca = res,axes = c(1,2)) + theme(aspect.ratio = 1) + ggtitle("η2マップ1−2軸")
-  # 　　supv <- input$supvars
-  #     coord_eta2_sup <- dimeta2(resmca = res,
-  #                               vars = df_reactive() %>% select(all_of(input$supvars)),
-  #                               dim = c(1,2)) %>%
-  #       as_tibble() %>%
-  #       mutate(
-  #         vnames = input$supvars,
-  #         dim.1 = dim.1 / 100,
-  #         dim.2 = dim.2 / 100
-  #       ) %>%
-  #       select(vnames, dim.1, dim.2)
-  #
-  #     p <- p +
-  #       # ポイントの追加
-  #       geom_point(
-  #         data = coord_eta2_sup,
-  #         aes(x = dim.1, y = dim.2),
-  #         size = 2,
-  #         color = "blue" # active変数と区別するために色を付けると見やすいです
-  #       ) +
-  #       # ラベルの追加
-  #       geom_text_repel(
-  #         data = coord_eta2_sup,
-  #         aes(x = dim.1, y = dim.2, label = vnames),
-  #         size = 3,            # 文字の大きさ
-  #         vjust = -1,          # 少し上にずらす（geom_textの場合）
-  #         box.padding = 0.5    # ラベル同士の距離を調整（ggrepelの場合）
-  #       )
-  #     p
-  #   })
-
-  ## 3-2 軸 ----
-  # output$eta2_map_32 <- renderPlot({
-  #   res <- mca_result()
-  #   req(res)
-  #   req(input$supvars)
-  #   eta2_coord <- GDAtools::dimeta2(res,df_reactive() %>% select(all_of(input$supvars)),dim = c(3,2))
-  #   p <- GDAtools::ggeta2_variables(resmca = res,axes = c(3,2)) + theme(aspect.ratio = 1) + ggtitle("η2マップ3-2軸")
-  #   supv <- input$supvars
-  #   coord_eta2_sup <- dimeta2(resmca = res,
-  #                             vars = df_reactive() %>% select(all_of(input$supvars)),
-  #                             dim = c(3,2)) %>%
-  #     as_tibble() %>%
-  #     mutate(
-  #       vnames = input$supvars,
-  #       dim.3 = dim.3 / 100,
-  #       dim.2 = dim.2 / 100
-  #     ) %>%
-  #     select(vnames, dim.3, dim.2)
-  #
-  #   p <- p +
-  #     # ポイントの追加
-  #     geom_point(
-  #       data = coord_eta2_sup,
-  #       aes(x = dim.3, y = dim.2),
-  #       size = 2,
-  #       color = "blue" # active変数と区別するために色を付けると見やすいです
-  #     ) +
-  #     # ラベルの追加
-  #     geom_text_repel(
-  #       data = coord_eta2_sup,
-  #       aes(x = dim.3, y = dim.2, label = vnames),
-  #       size = 3,            # 文字の大きさ
-  #       vjust = -1,          # 少し上にずらす（geom_textの場合）
-  #       box.padding = 0.5    # ラベル同士の距離を調整（ggrepelの場合）
-  #     )
-  #   p
-  # })
-  #
-  # ## 1-3 軸 ----
-  # output$eta2_map_13 <- renderPlot({
-  #   res <- mca_result()
-  #   req(res)
-  #   req(input$supvars)
-  #   eta2_coord <- GDAtools::dimeta2(res,df_reactive() %>% select(all_of(input$supvars)),dim = c(1,3))
-  #   p <- GDAtools::ggeta2_variables(resmca = res,axes = c(1,3)) + theme(aspect.ratio = 1) + ggtitle("η2マップ1-3軸")
-  #   supv <- input$supvars
-  #   coord_eta2_sup <- dimeta2(resmca = res,
-  #                             vars = df_reactive() %>% select(all_of(input$supvars)),
-  #                             dim = c(1,3)) %>%
-  #     as_tibble() %>%
-  #     mutate(
-  #       vnames = input$supvars,
-  #       dim.1 = dim.1 / 100,
-  #       dim.3 = dim.3 / 100
-  #     ) %>%
-  #     select(vnames, dim.1, dim.3)
-  #
-  #   p <- p +
-  #     # ポイントの追加
-  #     geom_point(
-  #       data = coord_eta2_sup,
-  #       aes(x = dim.1, y = dim.3),
-  #       size = 2,
-  #       color = "blue" # active変数と区別するために色を付けると見やすいです
-  #     ) +
-  #     # ラベルの追加
-  #     geom_text_repel(
-  #       data = coord_eta2_sup,
-  #       aes(x = dim.1, y = dim.3, label = vnames),
-  #       size = 3,            # 文字の大きさ
-  #       vjust = -1,          # 少し上にずらす（geom_textの場合）
-  #       box.padding = 0.5    # ラベル同士の距離を調整（ggrepelの場合）
-  #     )
-  #   p
-  # })
-
-
   #  変数マップ（3枚）----
 
   draw_vari_plot <- function(mca_data, axes, title) {
@@ -700,10 +586,6 @@ function(input, output, session) {
   })#, height = 600)
 
 
-
-
-
-
   # 集中楕円（GDAtools::ggadd_kellipses）----
   #  → 引数: base map(indiv), resmca, var=factor, sel=選択カテゴリの番号（整数ベクトル）
 
@@ -773,6 +655,70 @@ function(input, output, session) {
       NULL
     })
   })#, height = 600)
+
+
+  # -----　ここからENQview function 2026/04/26
+
+  # 選択されたオブジェクトを reactiveVal に格納
+  data.df <- reactiveVal(NULL)
+  observeEvent(input$rda_object, {
+    req(input$rda_object)
+    obj <- get(input$rda_object, envir = rda_env())
+    if (is.data.frame(obj)) {
+      data.df(obj)  # ここで reactiveVal に保存
+    } else {
+      showNotification("選択したオブジェクトはデータフレームではありません。", type = "error")
+      data.df(NULL)
+    }
+  })
+
+  # ←★ ここを追加：data.df() が更新されたらUIを更新
+  observeEvent(data.df(), {
+    req(data.df())
+    data <- data.df()
+    updateSelectInput(session, "select_input_data_for_hist",
+                      choices = colnames(data))
+  })
+
+  data_for_plot <- reactive({
+    req(df_reactive())
+#    data.df()
+    df_reactive()
+  })
+  output$hist_var_ui <- renderUI({
+    req(df_reactive())
+    selectInput("select_input_data_for_hist", "確認したい単変数",
+                choices = names(df_reactive()))
+
+    # req(data.df())
+    # selectInput("select_input_data_for_hist", "確認したい単変数",
+    #             choices = names(data.df()))
+  })
+
+  output$barchart2 <- renderPlot({
+    req(df_reactive())
+    data_for_plot <- df_reactive()
+    data_for_plot() %>% count(!!!rlang::syms(input$select_input_data_for_hist)) %>% dplyr::rename(V1=1) %>% filter(V1 != "非該当") %>%
+      dplyr::mutate(rate=100* .data[["n"]]/ sum(.data[["n"]])) %>%
+      ggplot2::ggplot(aes(x=V1,y=rate)) + ggplot2::geom_col(aes(fill=V1)) + ggplot2::ggtitle(input$select_input_data_for_hist)
+  })
+
+  output$simple_table2 <- DT::renderDataTable({ #renderTable({#
+    req(df_reactive())
+    data_for_plot <- df_reactive()
+    table(data_for_plot()[[input$select_input_data_for_hist]]) -> tmp
+    round(100*prop.table(tmp),1) -> tmp2
+    data.frame(tmp,rate=tmp2)[,c(1,2,4)] #%>% DT::datatable() -> tmp3
+    # tmp3 %>%
+    #   formatStyle(
+    #     columns = colnames(tmp3),
+    #     target = 'row',
+    #     backgroundColor = 'white',
+    #     color = 'black'
+    #   )
+  })
+
+# ----ここまで
 
   #  ダウンロード（speMCA結果） ------------------------
 
