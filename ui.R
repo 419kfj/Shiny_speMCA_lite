@@ -7,13 +7,19 @@ shinyUI(
   navbarPage("speMCA分析サポート",
       # theme = shinytheme("slate"),
        tabPanel("概要",
-           h2("アプリケーション概要"),
+           h2("アプリケーション概要",paste("Version:", app_version)),
            p("LeRoux  & Rouanet \"Multiple Correspondence Analysis\"(大隅・小野・鳰薬『多重対応分析』で紹介されているspecficMCAをGDAtoolsをベースに分析をおこないます。"),
            p("（ここに機能の概要を挿入します。）"),
            helpText("うまく動かない可能性もあるのでご注意ください。"),
            # バージョン情報の表示
-           helpText(paste("Version:", app_version)),
+           # helpText(paste("Version:", app_version)),
            #      hr(), # 区切り線
+           h3("Powered by"),
+           img(src = "GDAtools.png", width = "15%", height = "15%"),
+           img(src = "shiny.webp", width = "15%", height = "15%"),
+           img(src = "ggplot2.png", width = "15%", height = "15%"),
+           img(src = "dplyr.png", width = "15%", height = "15%"),
+
            ),
 
        tabPanel("File読み込み-MCA実行 ",
