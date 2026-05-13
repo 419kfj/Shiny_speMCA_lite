@@ -21,7 +21,9 @@ shinyUI(
            img(src = "shiny.webp", width = "100px"),#, height = "10%"),
            img(src = "ggplot2.png", width = "100px"),#, height = "10%"),
            img(src = "dplyr.png", width = "100px"),#, height = "10%"),
-
+           h3("Developed by"),
+           img(src = "rstudio-logo-png_seeklogo-349849.png", width = "100px"),
+           img(src = "Google-Gemini-Logo.png", width = "100px")
            ),
 
        tabPanel("File読み込み-MCA実行 ",
@@ -132,7 +134,8 @@ shinyUI(
 
                   tabPanel("ソースコード/GitHUb",
                            a(href="https://github.com/419kfj/Shiny_speMCA_lite",
-                             p("https://github.com/419kfj/Shiny_speMCA_lite"))
+                             p("https://github.com/419kfj/Shiny_speMCA_lite")),
+                           img(src = "github-logo.png", width = "100px"),#"8%"),#, height = "10%"),
                   )
        )
    )
