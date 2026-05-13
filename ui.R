@@ -7,18 +7,20 @@ shinyUI(
   navbarPage("speMCA分析サポート",
       # theme = shinytheme("slate"),
        tabPanel("概要",
-           h2("アプリケーション概要",paste("Version:", app_version)),
+           h2("多重対応分析MCA分析サポート",paste("Version:", app_version)),
            p("LeRoux  & Rouanet \"Multiple Correspondence Analysis\"(大隅・小野・鳰薬『多重対応分析』で紹介されているspecficMCAをGDAtoolsをベースに分析をおこないます。"),
-           p("（ここに機能の概要を挿入します。）"),
+           p("データセットは、Rのオブジェクト、.Rdaで用意します。"),
+           p("speMCAのリザルトはダウンロードして、別途分析することが可能です。"),
+
            helpText("うまく動かない可能性もあるのでご注意ください。"),
            # バージョン情報の表示
            # helpText(paste("Version:", app_version)),
            #      hr(), # 区切り線
            h3("Powered by"),
-           img(src = "GDAtools.png", width = "15%", height = "15%"),
-           img(src = "shiny.webp", width = "15%", height = "15%"),
-           img(src = "ggplot2.png", width = "15%", height = "15%"),
-           img(src = "dplyr.png", width = "15%", height = "15%"),
+           img(src = "GDAtools.png", width = "100px"),#"8%"),#, height = "10%"),
+           img(src = "shiny.webp", width = "100px"),#, height = "10%"),
+           img(src = "ggplot2.png", width = "100px"),#, height = "10%"),
+           img(src = "dplyr.png", width = "100px"),#, height = "10%"),
 
            ),
 
@@ -54,12 +56,15 @@ shinyUI(
                               plotOutput("barchart2"),
                               DT::dataTableOutput("simple_table2")
                      ),
-                   tabPanel("使い方",
+                   tabPanel("使い方/関連資料",
                             p("アプリの詳細な使い方は、以下のリンク先をご確認ください。"),
                             a("Shinyアプリの使い方ガイド（外部サイト）",
                               href = "https://www.fujimotolabo.uk/Shiny_app_how2/",
                               target = "_blank") # 新しいタブで開く設定
-                            )
+                            ),
+                   　　　　 a("対応分析/多重対応分析関連資料",
+                   　　　　   href = "https://www.fujimotolabo.uk/CAMCA_archive/",
+                   　　　　   target = "_blank")
                 )
             ) # mainPanel
           )
@@ -118,7 +123,14 @@ shinyUI(
                              href = "https://www.fujimotolabo.uk/Shiny_app_how2/",
                              target = "_blank") # 新しいタブで開く設定
                   ),
-                  tabPanel("ソースコード",
+
+                  tabPanel("MCA関連資料",
+#                           p("MCA関連資料"),
+                           a("MCA関連資料",href="https://www.fujimotolabo.uk/CAMCA_archive/",
+                             target = "_blank")
+                  ),
+
+                  tabPanel("ソースコード/GitHUb",
                            a(href="https://github.com/419kfj/Shiny_speMCA_lite",
                              p("https://github.com/419kfj/Shiny_speMCA_lite"))
                   )
